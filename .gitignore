@@ -1,0 +1,25 @@
+# --- Maven ---
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.nextReleaseBackup
+pom.xml.versionsBackup
+pom.xml.seed
+release.properties
+dependency-reduced-pom.xml
+build.log
+cleanLog.log
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# --- Sistema Operacional (Opcional) ---
+.DS_Store
+Thumbs.db
+
+# --- Logs do Logback / Log4j (Se usar no futuro) ---
+*.log

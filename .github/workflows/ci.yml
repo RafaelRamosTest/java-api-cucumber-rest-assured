@@ -1,0 +1,70 @@
+name: API Automation CI
+
+# Gatilhos de execução do pipeline
+on:
+  # 1. Roda a cada Push na branch main (pipeline de validação rápida)
+  push:
+    branches:
+      - main
+
+  # 2. Roda de forma agendada (Segunda a Sexta às 15:07 UTC / 12:07 de Brasília)
+  schedule:
+    - cron: '7 15 * * 1-5'
+
+jobs:
+  # JOB 1: Execução em commits/push comuns
+  test-push:
+    # Garante que esse job de push não rode se o gatilho for o agendamento (schedule)
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Java 17 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Rodar todos os testes do Cucumber
+        run: mvn clean test
+
+      - name: Salvar Relatório de Testes (Artefato)
+        if: always() # Garante que o relatório seja salvo mesmo se os testes falharem
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report-push
+          path: target/cucumber-reports/
+          retention-days: 7
+
+  # JOB 2: Execução do Regressivo Agendado (Schedule)
+  test-regressivo-diario:
+    # Só executa se o gatilho for o agendador de horário
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar o Java 17 (JDK)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Rodar apenas o Teste Regressivo
+        # Passa os parâmetros para filtrar pela tag @Regressivo
+        run: mvn clean test -Dcucumber.plugin="pretty, html:target/cucumber-reports/regressivo.html" -Dcucumber.filter.tags="@Regressivo"
+
+      - name: Salvar Relatório Regressivo (Artefato)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report-regressivo
+          path: target/cucumber-reports/
+          retention-days: 30 # Guarda por mais tempo o histórico do regressivo
